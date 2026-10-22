@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyBuddy ⚡ Your AI Study Squad</title>
+  
+  <!-- Modern Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  
+  <!-- Canvas Confetti for winning the quiz -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-dark: #4f46e5;
+      --accent: #ec4899;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      --bg: #0b0f19;
+      --card-bg: rgba(22, 27, 46, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(99, 102, 241, 0.4);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #f43f5e;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding-bottom: 5rem;
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    header {
+      padding: 3rem 1.5rem 2rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.9rem;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #c7d2fe;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .badge-pill .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 8px #4ade80;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    header h1 {
+      font-size: clamp(2.4rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #ffffff 30%, #c7d2fe 70%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    /* ── Agent Pipeline Live Visualizer ────────────────────── */
+    .squad-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.65rem;
+      background: rgba(18, 23, 41, 0.7);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: 18px;
+      padding: 0.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 700px) {
+      .squad-bar { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .agent-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0.75rem 0.5rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .agent-card .icon-wrap {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      margin-bottom: 0.4rem;
+      transition: all 0.3s;
+    }
+
+    .agent-card .name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .agent-card .role {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Active Glowing Agent State */
+    .agent-card.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .agent-card.active .icon-wrap {
+      background: var(--primary);
+      transform: scale(1.1);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+    }
+
+    /* ── Main Glass Cards ──────────────────────────────────── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      transition: border-color 0.25s;
+    }
+
+    .card:hover {
+      border-color: var(--card-hover-border);
+    }
+
+    .card h2 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    /* ── Modern Tabs ───────────────────────────────────────── */
+    .tab-pills {
+      display: inline-flex;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 0.3rem;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      gap: 0.3rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-btn {
+      padding: 0.55rem 1.25rem;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    /* ── Input styling ─────────────────────────────────────── */
+    .form-group {
+      margin-bottom: 1.35rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      background: rgba(10, 14, 26, 0.7);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 0.9rem 1.1rem;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--text);
+      transition: all 0.2s ease;
+    }
+
+    input[type="text"]:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18), 0 0 20px rgba(99, 102, 241, 0.2);
+      background: rgba(10, 14, 26, 0.9);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    select option {
+      background: #111827;
+      color: #fff;
+    }
+
+    /* ── Suggested Quick Topic Chips ───────────────────────── */
+    .chip-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.6rem;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: var(--primary-light);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* ── Action Buttons ────────────────────────────────────── */
+    .btn-gradient {
+      width: 100%;
+      padding: 1rem 1.8rem;
+      background: var(--accent-gradient);
+      color: #ffffff;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.08rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(236, 72, 153, 0.4);
+    }
+
+    .btn-gradient:active {
+      transform: translateY(0);
+    }
+
+    .btn-gradient:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results Top Meta Bar ──────────────────────────────── */
+    .meta-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .meta-tag {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      padding: 0.35rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .meta-tag strong {
+      color: var(--text);
+    }
+
+    /* ── Study Notes Markdown Box ──────────────────────────── */
+    .notes-box {
+      background: rgba(10, 14, 26, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 1.75rem;
+      font-size: 0.98rem;
+      line-height: 1.8;
+      color: #e2e8f0;
+      position: relative;
+    }
+
+    .notes-box h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .notes-box h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #a5b4fc;
+      margin-top: 1.5rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .notes-box h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #f472b6;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .notes-box p {
+      margin-bottom: 1rem;
+    }
+
+    .notes-box ul, .notes-box ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .notes-box li {
+      margin-bottom: 0.4rem;
+    }
+
+    .notes-box strong {
+      color: #ffffff;
+      background: rgba(99, 102, 241, 0.18);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+    }
+
+    .notes-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(99, 102, 241, 0.2);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* ── Gamified Quiz Styles ──────────────────────────────── */
+    .quiz-card-item {
+      background: rgba(15, 20, 36, 0.8);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 1.4rem;
+      margin-bottom: 1.2rem;
+      transition: all 0.25s;
+    }
+
+    .quiz-card-item:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .q-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .q-number {
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--primary-light);
+      font-weight: 800;
+      font-size: 0.82rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 8px;
+      white-space: nowrap;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .q-text {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #ffffff;
+      line-height: 1.5;
+    }
+
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.75rem 1rem;
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .option-label:hover {
+      background: rgba(99, 102, 241, 0.09);
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateX(3px);
+    }
+
+    .option-label input[type="radio"] {
+      display: none;
+    }
+
+    .key-badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    /* Selected state before checking */
+    .option-label.selected {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--primary);
+    }
+
+    .option-label.selected .key-badge {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Correct option styling */
+    .option-label.is-correct {
+      background: rgba(16, 185, 129, 0.15) !important;
+      border-color: var(--success) !important;
+      color: #a7f3d0 !important;
+      font-weight: 600;
+    }
+
+    .option-label.is-correct .key-badge {
+      background: var(--success);
+      color: #000;
+      font-weight: 800;
+    }
+
+    /* Wrong option styling */
+    .option-label.is-wrong {
+      background: rgba(244, 63, 94, 0.15) !important;
+      border-color: var(--danger) !important;
+      color: #fecdd3 !important;
+    }
+
+    .option-label.is-wrong .key-badge {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    /* Explanation Reveal */
+    .explanation-box {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.9rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .explanation-box.correct {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
+    .explanation-box.wrong {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #fda4af;
+    }
+
+    /* ── Single Big Submit Button ──────────────────────────── */
+    .check-answers-btn {
+      width: 100%;
+      padding: 1.1rem;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+      transition: all 0.25s;
+      margin-top: 1.5rem;
+    }
+
+    .check-answers-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(16, 185, 129, 0.45);
+    }
+
+    /* ── Score Summary Celebration Card ───────────────────── */
+    .score-hero-card {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 1.75rem;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
+      border: 1.5px solid rgba(99, 102, 241, 0.4);
+      text-align: center;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .score-hero-card .score-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 0.3rem;
+      background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .score-hero-card .score-desc {
+      font-size: 1.05rem;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    /* ── Strict Evaluator Verdict Banner ───────────────────── */
+    .eval-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      margin-top: 1.5rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .eval-badge.pass {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+    }
+
+    /* ── Error Box ─────────────────────────────────────────── */
+    .error-toast {
+      display: none;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1.5px solid var(--danger);
+      color: #fecdd3;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      margin-top: 1rem;
+      font-size: 0.92rem;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 4rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge-pill">
+    <span class="pulse-dot"></span>
+    4 Autonomous AI Agents Collaborating
+  </div>
+  <h1>Study Buddy</h1>
+  <p>Your personal AI study squad. Turn any topic or textbook chapter into clean exam notes &amp; interactive practice quizzes in seconds.</p>
+</header>
+
+<div class="container">
+
+  <!-- ── 4-Agent Live Pipeline Visualizer ────────────────── -->
+  <div class="squad-bar">
+    <div class="agent-card" id="agent-researcher">
+      <div class="icon-wrap">🔍</div>
+      <div class="name">Researcher</div>
+      <div class="role">Extracts Key Facts</div>
+    </div>
+    <div class="agent-card" id="agent-summarizer">
+      <div class="icon-wrap">📝</div>
+      <div class="name">Summarizer</div>
+      <div class="role">Structures Notes</div>
+    </div>
+    <div class="agent-card" id="agent-quiz">
+      <div class="icon-wrap">🧠</div>
+      <div class="name">Quiz Generator</div>
+      <div class="role">Crafts Practice MCQs</div>
+    </div>
+    <div class="agent-card" id="agent-evaluator">
+      <div class="icon-wrap">⚖️</div>
+      <div class="name">Evaluator</div>
+      <div class="role">Strict Quality Review</div>
+    </div>
+  </div>
+
+  <!-- ── Input Studio Card ──────────────────────────────── -->
+  <div class="card">
+    <h2>⚡ What are you studying?</h2>
+
+    <!-- Mode Selector Tabs -->
+    <div class="tab-pills">
+      <button class="tab-btn active" data-mode="topic" onclick="switchMode('topic')">
+        <span>💡</span> Topic Mode
+      </button>
+      <button class="tab-btn" data-mode="text" onclick="switchMode('text')">
+        <span>📄</span> Paste Chapter Mode
+      </button>
+    </div>
+
+    <form id="studyForm" onsubmit="handleStudySubmit(event)">
+      <div class="form-group">
+        <label for="topic">Topic Title</label>
+        <input 
+          type="text" 
+          id="topic" 
+          placeholder="e.g. Photosynthesis, Neural Networks, TCP/IP Handshake, French Revolution" 
+          required 
+          autocomplete="off"
+        />
+
+        <!-- Quick Idea Chips -->
+        <div class="chip-container" id="chipBox">
+          <span class="chip" onclick="quickFill('Photosynthesis')">🌱 Photosynthesis</span>
+          <span class="chip" onclick="quickFill('Quantum Computing')">⚛️ Quantum Computing</span>
+          <span class="chip" onclick="quickFill('TCP 3-Way Handshake')">🌐 TCP Handshake</span>
+          <span class="chip" onclick="quickFill('French Revolution')">🏰 French Revolution</span>
+          <span class="chip" onclick="quickFill('CRISPR Gene Editing')">🧬 CRISPR</span>
+        </div>
+      </div>
+
+      <div class="form-group" id="textGroup" style="display:none">
+        <label for="sourceText">Paste Chapter Text / Lecture Slides</label>
+        <textarea 
+          id="sourceText" 
+          placeholder="Paste raw textbook excerpt, PDF text, or professor notes here. The Researcher agent will extract and refine the core concepts..."
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="numQ">Practice Questions</label>
+        <select id="numQ">
+          <option value="3">3 Rapid Fire Questions</option>
+          <option value="5" selected>5 Standard Questions (Recommended)</option>
+          <option value="8">8 Deep Dive Questions</option>
+        </select>
+      </div>
+
+      <button class="btn-gradient" type="submit" id="submitBtn">
+        <span class="spinner" id="spinner"></span>
+        <span id="btnText">✨ Launch AI Squad (Generate Guide &amp; Quiz)</span>
+      </button>
+    </form>
+
+    <div class="error-toast" id="errorBox"></div>
+  </div>
+
+  <!-- ── Output Results Container ───────────────────────── -->
+  <div id="results" style="display:none;">
+
+    <!-- Study Notes Card -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+        <h2>📋 Exam-Ready Notes</h2>
+        <div class="notes-actions">
+          <button type="button" class="copy-btn" onclick="copyNotes()">
+            <span id="copyIcon">📋</span> <span id="copyText">Copy Markdown</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="meta-pills" id="metaBar"></div>
+      <div class="notes-box" id="notesContent"></div>
+    </div>
+
+    <!-- Practice Quiz Card -->
+    <div class="card">
+      <h2>🎯 Interactive Quiz</h2>
+      <p style="color:var(--text-muted); font-size:0.92rem; margin-bottom:1.5rem;">
+        Test your knowledge! Select your answers for each question, then hit the button below to check your score.
+      </p>
+
+      <div id="quizContent"></div>
+
+      <!-- Single Check Answers Button Below All Questions -->
+      <button type="button" class="check-answers-btn" id="checkAnswersBtn" onclick="checkAllAnswers()">
+        <span>✓</span> Check My Answers
+      </button>
+
+      <!-- Score Hero Card (Revealed after checking) -->
+      <div class="score-hero-card" id="scoreHero"></div>
+
+      <!-- Strict Evaluator Badge -->
+      <div>
+        <span class="eval-badge pass" id="evalBadge"></span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  Study Buddy &bull; Built with 4 Autonomous Agents Powered by Groq LLM
+</footer>
+
+<script>
+  let currentQuiz = [];
+  let rawNotesMarkdown = "";
+
+  function quickFill(topicName) {
+    document.getElementById('topic').value = topicName;
+    document.getElementById('topic').focus();
+  }
+
+  function switchMode(mode) {
+    document.querySelectorAll('.tab-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.mode === mode));
+    document.getElementById('textGroup').style.display =
+      mode === 'text' ? 'block' : 'none';
+    document.getElementById('chipBox').style.display =
+      mode === 'text' ? 'none' : 'flex';
+  }
+
+  async function handleStudySubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+    const errBox = document.getElementById('errorBox');
+    const results = document.getElementById('results');
+
+    errBox.style.display = 'none';
+    results.style.display = 'none';
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+    btnText.textContent = 'AI Squad is cooking your study guide...';
+
+    // Visual sequence animation through agents
+    let step = 0;
+    const agentSequence = ['researcher', 'summarizer', 'quiz', 'evaluator'];
+    const timer = setInterval(() => {
+      clearAgentHighlights();
+      const current = agentSequence[step % agentSequence.length];
+      document.getElementById(`agent-${current}`).classList.add('active');
+      step++;
+    }, 1800);
+
+    const activeMode = document.querySelector('.tab-btn.active').dataset.mode;
+    const payload = {
+      topic: document.getElementById('topic').value.trim(),
+      num_questions: parseInt(document.getElementById('numQ').value)
+    };
+    if (activeMode === 'text') {
+      payload.source_text = document.getElementById('sourceText').value.trim() || null;
+    }
+
+    try {
+      const res = await fetch('/study', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error (${res.status})`);
+      }
+
+      const data = await res.json();
+      if (data.error && (!data.notes || !data.quiz.length)) {
+        throw new Error(data.error);
+      }
+
+      renderResults(data);
+    } catch (err) {
+      errBox.innerHTML = `<strong>⚠️ Oops:</strong> ${err.message}`;
+      errBox.style.display = 'block';
+    } finally {
+      clearInterval(timer);
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      btnText.textContent = '✨ Launch AI Squad (Generate Guide & Quiz)';
+      clearAgentHighlights();
+    }
+  }
+
+  function clearAgentHighlights() {
+    document.querySelectorAll('.agent-card').forEach(n => n.classList.remove('active'));
+  }
+
+  function renderMarkdown(text) {
+    let html = text
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/^\* (.*$)/gim, '<li>$1</li>')
+      .replace(/^- (.*$)/gim, '<li>$1</li>')
+      .replace(/\n\n/gim, '<p></p>');
+    
+    html = html.replace(/((?:<li>.*?<\/li>\s*)+)/gim, '<ul>$1</ul>');
+    return html;
+  }
+
+  function copyNotes() {
+    if (!rawNotesMarkdown) return;
+    navigator.clipboard.writeText(rawNotesMarkdown).then(() => {
+      const btn = document.getElementById('copyText');
+      btn.textContent = 'Copied! ✨';
+      setTimeout(() => { btn.textContent = 'Copy Markdown'; }, 2000);
+    });
+  }
+
+  function renderResults(data) {
+    currentQuiz = data.quiz || [];
+    rawNotesMarkdown = data.notes || "";
+
+    // Meta bar
+    const meta = document.getElementById('metaBar');
+    meta.innerHTML = `
+      <span class="meta-tag"><span>🚀</span> Mode: <strong>${data.mode.toUpperCase()}</strong></span>
+      <span class="meta-tag"><span>⚡</span> Time: <strong>${data.elapsed_seconds}s</strong></span>
+      <span class="meta-tag"><span>🤖</span> 4 Agents Ran</span>
+      <span class="meta-tag"><span>🔄</span> ${data.attempts} Evaluation Round(s)</span>
+    `;
+
+    // Notes
+    document.getElementById('notesContent').innerHTML = renderMarkdown(data.notes);
+
+    // Strict Evaluator Verdict
+    const evalBadge = document.getElementById('evalBadge');
+    const score = data.review.score || 0;
+    const passed = data.review.passed;
+    evalBadge.innerHTML = `⚖️ Evaluator Verdict: <strong>${score}/10</strong> (${passed ? 'PASSED &bull; 100% Fact Checked' : 'REFINED WITH FEEDBACK'})`;
+
+    // Reset quiz buttons & score hero
+    document.getElementById('scoreHero').style.display = 'none';
+    const checkBtn = document.getElementById('checkAnswersBtn');
+    checkBtn.style.display = 'flex';
+    checkBtn.textContent = '✓ Check My Answers';
+
+    // Render interactive questions
+    const container = document.getElementById('quizContent');
+    container.innerHTML = '';
+
+    currentQuiz.forEach((q, i) => {
+      const qDiv = document.createElement('div');
+      qDiv.className = 'quiz-card-item';
+      qDiv.id = `q_card_${i}`;
+
+      const optionsHtml = (q.options || []).map((opt, j) => {
+        const letter = String.fromCharCode(65 + j);
+        return `
+          <label class="option-label" id="opt_label_${i}_${letter}" onclick="selectOption(${i}, '${letter}')">
+            <input type="radio" name="quiz_q_${i}" value="${letter}" />
+            <div class="key-badge">${letter}</div>
+            <div class="opt-text">${opt}</div>
+          </label>
+        `;
+      }).join('');
+
+      qDiv.innerHTML = `
+        <div class="q-header">
+          <div class="q-number">Question ${i + 1}</div>
+          <div class="q-text">${q.question}</div>
+        </div>
+        <div class="options-grid">
+          ${optionsHtml}
+        </div>
+        <div class="explanation-box" id="exp_${i}"></div>
+      `;
+
+      container.appendChild(qDiv);
+    });
+
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function selectOption(qIdx, letter) {
+    const card = document.getElementById(`q_card_${qIdx}`);
+    card.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
+    const chosen = document.getElementById(`opt_label_${qIdx}_${letter}`);
+    if (chosen) chosen.classList.add('selected');
+  }
+
+  function checkAllAnswers() {
+    if (!currentQuiz || currentQuiz.length === 0) return;
+
+    let correctCount = 0;
+    let answeredCount = 0;
+
+    currentQuiz.forEach((q, i) => {
+      const selectedInput = document.querySelector(`input[name="quiz_q_${i}"]:checked`);
+      const card = document.getElementById(`q_card_${i}`);
+      const expDiv = document.getElementById(`exp_${i}`);
+      const expected = (q.answer || '').trim().charAt(0).toUpperCase();
+
+      // Clear previous verification styling
+      card.querySelectorAll('.option-label').forEach(opt => {
+        opt.classList.remove('is-correct', 'is-wrong');
+      });
+
+      if (selectedInput) {
+        answeredCount++;
+        const userChoice = selectedInput.value.toUpperCase();
+        const isCorrect = userChoice === expected;
+
+        if (isCorrect) {
+          correctCount++;
+          document.getElementById(`opt_label_${i}_${userChoice}`).classList.add('is-correct');
+          expDiv.innerHTML = `<strong>✨ Correct!</strong> ${q.explanation || ''}`;
+          expDiv.className = 'explanation-box correct';
+        } else {
+          document.getElementById(`opt_label_${i}_${userChoice}`).classList.add('is-wrong');
+          const correctLabel = document.getElementById(`opt_label_${i}_${expected}`);
+          if (correctLabel) correctLabel.classList.add('is-correct');
+
+          expDiv.innerHTML = `<strong>💡 The correct answer is ${expected}:</strong> ${q.explanation || ''}`;
+          expDiv.className = 'explanation-box wrong';
+        }
+      } else {
+        // Left blank
+        const correctLabel = document.getElementById(`opt_label_${i}_${expected}`);
+        if (correctLabel) correctLabel.classList.add('is-correct');
+
+        expDiv.innerHTML = `<strong>⚠️ Not answered (Answer was ${expected}):</strong> ${q.explanation || ''}`;
+        expDiv.className = 'explanation-box wrong';
+      }
+      expDiv.style.display = 'block';
+    });
+
+    // Score calculations
+    const total = currentQuiz.length;
+    const percentage = Math.round((correctCount / total) * 100);
+    const scoreHero = document.getElementById('scoreHero');
+
+    let reaction = "🔥 Absolute Genius! You crushed it!";
+    if (percentage < 50) reaction = "💀 Cooked! Don't worry, review the notes above & try again!";
+    else if (percentage < 80) reaction = "⚡ Locked in! Good effort, review your missed questions!";
+
+    scoreHero.innerHTML = `
+      <div class="score-title">${correctCount} / ${total} Correct (${percentage}%)</div>
+      <div class="score-desc">${reaction}</div>
+    `;
+    scoreHero.style.display = 'block';
+    scoreHero.scrollIntoView({ behavior: 'smooth' });
+
+    // Confetti celebration if 70%+!
+    if (percentage >= 70 && typeof confetti === 'function') {
+      confetti({
+        particleCount: 90,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }
+</script>
+</body>
+</html>
