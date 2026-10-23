@@ -7,6 +7,7 @@ Endpoints:
 - GET  /       : serves the web frontend
 """
 
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -70,9 +71,10 @@ def health():
     return {"status": "ok", "provider": "Groq"}
 
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.get("/")
 def root():
-    return FileResponse("static/index.html")
+    return FileResponse(STATIC_DIR / "index.html")
